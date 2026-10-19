@@ -13,12 +13,16 @@ Pass --active plus --i-have-authorization to unlock:
   * --verify      → non-destructive verification of XSS reflection,
                     open redirect, LFI, and basic SSRF hints
 
+Pass --wordpress to additionally run WPScan when WordPress is detected
+(requires wpscan on PATH; WPSCAN_TOKEN env var recommended).
+
 Active mode is noisy: the target server WILL log every request.
 """
 
 import argparse
 import datetime
 import json
+import os
 import re
 import secrets
 import socket
@@ -302,6 +306,10 @@ def _parse_asn1(s):
 
 
 def check_software_hints(report, r):
+    """
+    Returns the set of detected CMS names, e.g. {"WordPress"}.
+    The caller uses this to decide whether to run CMS-specific scanners.
+    """
     section = "Outdated Software Hints"
     hints = []
 
@@ -332,6 +340,8 @@ def check_software_hints(report, r):
     else:
         report.add(section, "INFO", "next step",
                    "cross-check reported versions against vendor advisories")
+
+    return seen
 
 
 # ---------- active checks (require --active + --i-have-authorization) ----------
@@ -424,7 +434,7 @@ def check_exposed_paths(report, session, base_url):
 
 def scan(target, active=False, authorized=False, timeout=TIMEOUT,
          bruteforce=False, wordlist=None, verify=False,
-         max_workers=6, rate=0.20):
+         wordpress=False, max_workers=6, rate=0.20):
     global TIMEOUT
     TIMEOUT = timeout
 
@@ -470,7 +480,8 @@ def scan(target, active=False, authorized=False, timeout=TIMEOUT,
     check_cookies(report, r)
     if scheme == "https":
         check_ssl(report, hostname, port)
-    check_software_hints(report, r)
+    cms_detected = check_software_hints(report, r)
+    report.set_meta("cms_detected", sorted(cms_detected))
 
     if active:
         check_robots_sitemap(report, session, base_url)
@@ -490,6 +501,21 @@ def scan(target, active=False, authorized=False, timeout=TIMEOUT,
                                    rate_interval=rate)
         if verify:
             activescan.run_verification(report, session, target, timeout)
+
+    if wordpress:
+        if "WordPress" not in cms_detected:
+            report.add("WordPress", "INFO", "skipped",
+                       "WordPress not detected on this target")
+        else:
+            try:
+                from wordpress import scan_wordpress
+                scan_wordpress(report, target,
+                               api_token=os.getenv("WPSCAN_TOKEN"))
+            except ImportError:
+                report.add("WordPress", "ERROR", "wpscan module",
+                           "wordpress.py not found in the same directory")
+            except Exception as e:
+                report.add("WordPress", "ERROR", "wpscan", str(e)[:120])
 
     report.set_meta("finished",
                     datetime.datetime.now(datetime.timezone.utc).isoformat())
@@ -515,6 +541,9 @@ def main():
     ap.add_argument("--verify", action="store_true",
                     help="non-destructive verification probes "
                          "(XSS reflection, open redirect, LFI, SSRF hint)")
+    ap.add_argument("--wordpress", action="store_true",
+                    help="run WPScan when WordPress is detected "
+                         "(requires wpscan on PATH; WPSCAN_TOKEN env recommended)")
     ap.add_argument("--json", action="store_true",
                     help="emit JSON instead of human-readable text")
     ap.add_argument("--timeout", type=float, default=TIMEOUT,
@@ -534,6 +563,7 @@ def main():
         bruteforce=args.bruteforce,
         wordlist=args.wordlist,
         verify=args.verify,
+        wordpress=args.wordpress,
         max_workers=args.max_workers,
         rate=args.rate,
     )
@@ -546,6 +576,8 @@ def main():
     print(f"Mode:     {report.meta['mode']}")
     print(f"Status:   {report.meta['status']}  |  "
           f"Response time: {report.meta['elapsed']}")
+    if report.meta.get("cms_detected"):
+        print(f"CMS:      {', '.join(report.meta['cms_detected'])}")
     if args.active:
         print("Note:     active probes enabled; the server will log these requests.")
     print("=" * 60)
@@ -553,4 +585,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main ()
+    main()
