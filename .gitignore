@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# virtualenvs
+.venv/
+venv/
+env/
+ENV/
+
+# testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# editors
+.vscode/
+.idea/
+*.swp
+*~
+
+# tool output — never commit scan results
+*.json
+*.html
+!pyproject.toml
+!package.json
+reports/
+wordlists/private/
+
+ Note: the reports/ and .json to be ignores - only if you don't want client data to be exposed 
