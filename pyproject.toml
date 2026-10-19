@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vulnscan"
+version = "2.0.0"
+description = "Non-intrusive website hardening checker with opt-in active scanning"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{name = "Your Name", email = "you@example.com"}]
+keywords = ["security", "hardening", "pentest", "headers", "tls"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Security",
+    "Environment :: Console",
+]
+dependencies = [
+    "requests>=2.28",
+    "cryptography>=41.0",
+]
+
+[project.optional-dependencies]
+dev = ["ruff>=0.1", "pytest>=7.0"]
+
+[project.scripts]
+vulnscan = "vulnscan:main"
+
+[tool.setuptools]
+py-modules = ["vulnscan", "activescan"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
