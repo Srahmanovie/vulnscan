@@ -9,7 +9,7 @@ description = "Non-intrusive website hardening checker with opt-in active scanni
 readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "MIT"}
-authors = [{name = "Your Name", email = "you@example.com"}]
+authors = [{name = "S RAHMAN OVIE", email = "saidurrahmanovie@gmail.com"}]
 keywords = ["security", "hardening", "pentest", "headers", "tls"]
 classifiers = [
     "Programming Language :: Python :: 3",
