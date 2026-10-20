@@ -46,7 +46,7 @@ Non-intrusive website hardening checker with **opt-in** active scanning for auth
 ## Install
 
 ```bash
-git clone https://github.com/you/vulnscan.git
+git clone https://github.com/srahmanovie/vulnscan.git
 cd vulnscan
 python -m venv .venv && source .venv/bin/activate
 pip install -e .
